@@ -13,13 +13,13 @@ import CoreData
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey : Any]? = nil) -> Bool {
 
-    func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
-        // Fetch Main Storyboard
         let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
         
         // Instantiate Root Navigation Controller
-        let rootNavigationController = mainStoryboard.instantiateViewControllerWithIdentifier("StoryboardIDRootNavigationController") as! UINavigationController
+        let rootNavigationController = mainStoryboard.instantiateViewController(withIdentifier: "StoryboardIDRootNavigationController") as! UINavigationController
         
         // Configure View Controller
         if let listsViewController = rootNavigationController.topViewController as? ListsViewController {
@@ -30,35 +30,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.rootViewController = rootNavigationController
         
         return true
+        
     }
 
+    func applicationWillResignActive(_ application: UIApplication) {}
     
-    func applicationWillResignActive(application: UIApplication) {}
-    
-    func applicationDidEnterBackground(application: UIApplication) {
+    func applicationDidEnterBackground(_ application: UIApplication) {
         saveManagedObjectContext()
     }
     
-    func applicationWillEnterForeground(application: UIApplication) {}
+    func applicationWillEnterForeground(_ application: UIApplication) {}
     
-    func applicationDidBecomeActive(application: UIApplication) {}
+    func applicationDidBecomeActive(_ application: UIApplication) {}
     
-    func applicationWillTerminate(application: UIApplication) {
+    func applicationWillTerminate(_ application: UIApplication) {
         saveManagedObjectContext()
     }
 
     // MARK: -
     // MARK: Core Data Stack
     lazy var managedObjectModel: NSManagedObjectModel = {
-        let modelURL = NSBundle.mainBundle().URLForResource("Faulting", withExtension: "momd")!
-        return NSManagedObjectModel(contentsOfURL: modelURL)!
+        let modelURL = Bundle.main.url(forResource: "Faulting", withExtension: "momd")!
+        return NSManagedObjectModel(contentsOf: modelURL)!
     }()
     
     lazy var managedObjectContext: NSManagedObjectContext = {
         let persistentStoreCoordinator = self.persistentStoreCoordinator
         
         // Initialize Managed Object Context
-        var managedObjectContext = NSManagedObjectContext(concurrencyType: .MainQueueConcurrencyType)
+        var managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         
         // Configure Managed Object Context
         managedObjectContext.persistentStoreCoordinator = persistentStoreCoordinator
@@ -71,21 +71,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: self.managedObjectModel)
         
         // URL Documents Directory
-        let URLs = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)
+        let URLs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
         let applicationDocumentsDirectory = URLs[(URLs.count - 1)]
         
         // URL Persistent Store
-        let URLPersistentStore = applicationDocumentsDirectory.URLByAppendingPathComponent("Faulting.sqlite")
+        let URLPersistentStore = applicationDocumentsDirectory.appendingPathComponent("Faulting.sqlite")
         
         do {
             // Add Persistent Store to Persistent Store Coordinator
-            try persistentStoreCoordinator.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: URLPersistentStore, options: nil)
+            try persistentStoreCoordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: URLPersistentStore, options: nil)
             
         } catch {
             // Populate Error
             var userInfo = [String: AnyObject]()
-            userInfo[NSLocalizedDescriptionKey] = "There was an error creating or loading the application's saved data."
-            userInfo[NSLocalizedFailureReasonErrorKey] = "There was an error creating or loading the application's saved data."
+            userInfo[NSLocalizedDescriptionKey] = "There was an error creating or loading the application's saved data." as AnyObject
+            userInfo[NSLocalizedFailureReasonErrorKey] = "There was an error creating or loading the application's saved data." as AnyObject
             
             userInfo[NSUnderlyingErrorKey] = error as NSError
             let wrappedError = NSError(domain: "com.tutsplus.Faulting", code: 1001, userInfo: userInfo)
