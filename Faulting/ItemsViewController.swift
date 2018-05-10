@@ -18,9 +18,9 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
     var managedObjectContext: NSManagedObjectContext!
     
     
-    lazy var fetchedResultsController: NSFetchedResultsController = {
+    lazy var fetchedResultsController: NSFetchedResultsController = { () -> NSFetchedResultsController<NSFetchRequestResult> in 
         // Initialize Fetch Request
-        let fetchRequest = NSFetchRequest(entityName: "Item")
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Item")
         
         // Add Sort Descriptors
         let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
@@ -50,7 +50,7 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     // MARK: -
     // MARK: Table View Data Source Methods
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         if let sections = fetchedResultsController.sections {
             return sections.count
         }
@@ -58,7 +58,7 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
         return 0
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if let sections = fetchedResultsController.sections {
             let sectionInfo = sections[section]
             return sectionInfo.numberOfObjects
@@ -67,8 +67,8 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
         return 0
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifierItemCell, forIndexPath: indexPath)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifierItemCell, for: indexPath)
         
         // Configure Table View Cell
         configureCell(cell, atIndexPath: indexPath)
@@ -76,25 +76,25 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
         return cell
     }
     
-    func configureCell(cell: UITableViewCell, atIndexPath indexPath: NSIndexPath) {
+    func configureCell(_ cell: UITableViewCell, atIndexPath indexPath: IndexPath) {
         // Fetch Item
-        let item = fetchedResultsController.objectAtIndexPath(indexPath) as! Item
+        let item = fetchedResultsController.object(at: indexPath) as! Item
         
         // Update Cell
         cell.textLabel!.text = item.name
     }
     
-    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         return true
     }
     
-    func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if (editingStyle == .Delete) {
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if (editingStyle == .delete) {
             // Fetch Item
-            let item = fetchedResultsController.objectAtIndexPath(indexPath) as! Item
+            let item = fetchedResultsController.object(at: indexPath) as! Item
             
             // Delete Item
-            managedObjectContext.deleteObject(item)
+            managedObjectContext.delete(item)
             
             do {
                 try managedObjectContext.save()
@@ -108,10 +108,10 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     // MARK: -
     // MARK: Table View Delegate Methods
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
         
-        if let item = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Item {
+        if let item = self.fetchedResultsController.object(at: indexPath) as? Item {
             print(item.list?.name)
         }
         
@@ -119,40 +119,40 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     // MARK: -
     // MARK: Fetched Results Controller Delegate Methods
-    func controllerWillChangeContent(controller: NSFetchedResultsController) {
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         tableView.beginUpdates()
     }
     
-    func controllerDidChangeContent(controller: NSFetchedResultsController) {
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         tableView.endUpdates()
     }
     
-    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+    func controller(controller: NSFetchedResultsController<NSFetchRequestResult>, didChangeObject anObject: Any, atIndexPath indexPath: IndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         switch (type) {
-        case .Insert:
+        case .insert:
             if let indexPath = newIndexPath {
-                tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                tableView.insertRows(at: [indexPath], with: .fade)
             }
             break;
-        case .Delete:
+        case .delete:
             if let indexPath = indexPath {
-                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                tableView.deleteRows(at: [indexPath], with: .fade)
             }
             break;
-        case .Update:
+        case .update:
             if let indexPath = indexPath {
-                if let cell = tableView.cellForRowAtIndexPath(indexPath) {
+                if let cell = tableView.cellForRow(at: indexPath) {
                     configureCell(cell, atIndexPath: indexPath)
                 }
             }
             break;
-        case .Move:
+        case .move:
             if let indexPath = indexPath {
-                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                tableView.deleteRows(at: [indexPath], with: .fade)
             }
             
             if let newIndexPath = newIndexPath {
-                tableView.insertRowsAtIndexPaths([newIndexPath], withRowAnimation: .Fade)
+                tableView.insertRows(at: [newIndexPath], with: .fade)
             }
             break;
         }
@@ -160,8 +160,8 @@ class ItemsViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     // MARK: -
     // MARK: Actions
-    @IBAction func cancel(sender: UIBarButtonItem) {
-        dismissViewControllerAnimated(true, completion: nil)
+    @IBAction func cancel(_ sender: UIBarButtonItem) {
+        dismiss(animated: true, completion: nil)
     }
 
 }

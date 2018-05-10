@@ -19,9 +19,9 @@ class ListsViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     var managedObjectContext: NSManagedObjectContext!
     
-    lazy var fetchedResultsController: NSFetchedResultsController = {
+    lazy var fetchedResultsController: NSFetchedResultsController = { () -> NSFetchedResultsController<NSFetchRequestResult> in
         // Initialize Fetch Request
-        let fetchRequest = NSFetchRequest(entityName: "List")
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "List")
         
         // Add Sort Descriptors
         let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
@@ -48,45 +48,47 @@ class ListsViewController: UIViewController, UITableViewDataSource, UITableViewD
             print("\(fetchError), \(fetchError.userInfo)")
         }
     }
-
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
         if segue.identifier == SegueListViewController {
             guard let indexPath = tableView.indexPathForSelectedRow else { return }
             
             // Fetch List
-            let list = self.fetchedResultsController.objectAtIndexPath(indexPath) as! List
+            let list = self.fetchedResultsController.object(at: indexPath) as! List
             
             /*
-            print("1: \(list)")
-            
-            if let items = list.items {
-                print("2: \(items)")
-                print("3: \(items.count)")
-                print("4: \(items)")
-                
-                if let item = items.anyObject() {
-                    print("5: \(item)")
-                    print("6: \(item.name)")
-                    print("7: \(item)")
-                }
-            }
-            
-            print("8: \(list)")
-            */
+             print("1: \(list)")
+             
+             if let items = list.items {
+             print("2: \(items)")
+             print("3: \(items.count)")
+             print("4: \(items)")
+             
+             if let item = items.anyObject() {
+             print("5: \(item)")
+             print("6: \(item.name)")
+             print("7: \(item)")
+             }
+             }
+             
+             print("8: \(list)")
+             */
             
             // Fetch Destination View Controller
-            let listViewController = segue.destinationViewController as! ListViewController
+            let listViewController = segue.destination as! ListViewController
             
             // Configure View Controller
             listViewController.list = list
             
         } else if segue.identifier == SegueItemsViewController {
             // Fetch Destination View Controller
-            let itemsViewController = segue.destinationViewController as! ItemsViewController
+            let itemsViewController = segue.destination as! ItemsViewController
             
             // Configure View Controller
             itemsViewController.managedObjectContext = managedObjectContext
         }
+        
     }
     
     // MARK: -
@@ -99,7 +101,7 @@ class ListsViewController: UIViewController, UITableViewDataSource, UITableViewD
         return 0
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if let sections = fetchedResultsController.sections {
             let sectionInfo = sections[section]
             return sectionInfo.numberOfObjects
@@ -108,34 +110,37 @@ class ListsViewController: UIViewController, UITableViewDataSource, UITableViewD
         return 0
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifierListCell, forIndexPath: indexPath)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifierListCell, for: indexPath as IndexPath)
         
         // Configure Table View Cell
-        configureCell(cell, atIndexPath: indexPath)
+        configureCell(cell: cell, atIndexPath: indexPath)
         
         return cell
     }
     
-    func configureCell(cell: UITableViewCell, atIndexPath indexPath: NSIndexPath) {
+    func configureCell(cell: UITableViewCell, atIndexPath indexPath: IndexPath) {
         // Fetch List
-        let list = fetchedResultsController.objectAtIndexPath(indexPath) as! List
+        let list = fetchedResultsController.object(at: indexPath) as! List
         
         // Update Cell
         cell.textLabel!.text = list.name
     }
     
-    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        
         return true
+
     }
     
-    func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if (editingStyle == .Delete) {
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        
+        if (editingStyle == .delete) {
             // Fetch List
-            let list = fetchedResultsController.objectAtIndexPath(indexPath) as! List
+            let list = fetchedResultsController.object(at: indexPath) as! List
             
             // Delete List
-            managedObjectContext.deleteObject(list)
+            managedObjectContext.delete(list)
             
             do {
                 try managedObjectContext.save()
@@ -145,62 +150,70 @@ class ListsViewController: UIViewController, UITableViewDataSource, UITableViewD
                 print("\(saveError), \(saveError.userInfo)")
             }
         }
+        
     }
     
     // MARK: -
     // MARK: Table View Delegate Methods
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        tableView.deselectRow(at: indexPath, animated: true)
+        
     }
     
     // MARK: -
     // MARK: Fetched Results Controller Delegate Methods
-    func controllerWillChangeContent(controller: NSFetchedResultsController) {
+    
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        
         tableView.beginUpdates()
+
     }
     
-    func controllerDidChangeContent(controller: NSFetchedResultsController) {
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         tableView.endUpdates()
     }
     
-    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        
         switch (type) {
-        case .Insert:
+        case .insert:
             if let indexPath = newIndexPath {
-                tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                tableView.insertRows(at: [indexPath], with: .fade)
             }
             break;
-        case .Delete:
+        case .delete:
             if let indexPath = indexPath {
-                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                tableView.deleteRows(at: [indexPath as IndexPath], with: .fade)
             }
             break;
-        case .Update:
+        case .update:
             if let indexPath = indexPath {
-                if let cell = tableView.cellForRowAtIndexPath(indexPath) {
-                    configureCell(cell, atIndexPath: indexPath)
+                if let cell = tableView.cellForRow(at: indexPath) {
+                    configureCell(cell: cell, atIndexPath: indexPath)
                 }
             }
             break;
-        case .Move:
+        case .move:
             if let indexPath = indexPath {
-                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                tableView.deleteRows(at: [indexPath as IndexPath], with: .fade)
             }
             
             if let newIndexPath = newIndexPath {
-                tableView.insertRowsAtIndexPaths([newIndexPath], withRowAnimation: .Fade)
+                tableView.insertRows(at: [newIndexPath as IndexPath], with: .fade)
             }
             break;
+            
         }
     }
 
     // MARK: -
     // MARK: Actions
-    @IBAction func addList(sender: UIBarButtonItem) {
-        let entityDescription = NSEntityDescription.entityForName("List", inManagedObjectContext: managedObjectContext)
+    @IBAction func addList(_ sender: UIBarButtonItem) {
+        let entityDescription = NSEntityDescription.entity(forEntityName: "List", in: managedObjectContext)
         
         // Initialize List
-        let list = List(entity: entityDescription!, insertIntoManagedObjectContext: managedObjectContext)
+        let list = List(entity: entityDescription!, insertInto: managedObjectContext)
         
         // Configure List
         list.name = "List \(numberOfLists())"
